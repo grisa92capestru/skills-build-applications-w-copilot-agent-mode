@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
-const resolveBaseUrl = () => {
-  const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
-  if (codespaceName) {
-    return `https://${codespaceName}-8000.app.github.dev`;
-  }
-  return 'http://localhost:8000';
-};
-
 function Workouts() {
   const [workouts, setWorkouts] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [selectedWorkout, setSelectedWorkout] = useState(null);
-  const endpoint = `${resolveBaseUrl()}/api/workouts/`;
+  const endpoint = process.env.REACT_APP_CODESPACE_NAME
+    ? `https://${process.env.REACT_APP_CODESPACE_NAME}-8000.app.github.dev/api/workouts/`
+    : 'http://localhost:8000/api/workouts/';
 
   const fetchWorkouts = useCallback(async () => {
     try {

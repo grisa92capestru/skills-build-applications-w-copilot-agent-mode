@@ -1,18 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
-const resolveBaseUrl = () => {
-  const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
-  if (codespaceName) {
-    return `https://${codespaceName}-8000.app.github.dev`;
-  }
-  return 'http://localhost:8000';
-};
-
 function Leaderboard() {
   const [leaderboardEntries, setLeaderboardEntries] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [selectedEntry, setSelectedEntry] = useState(null);
-  const endpoint = `${resolveBaseUrl()}/api/leaderboard/`;
+  const endpoint = process.env.REACT_APP_CODESPACE_NAME
+    ? `https://${process.env.REACT_APP_CODESPACE_NAME}-8000.app.github.dev/api/leaderboard/`
+    : 'http://localhost:8000/api/leaderboard/';
 
   const fetchLeaderboard = useCallback(async () => {
     try {
