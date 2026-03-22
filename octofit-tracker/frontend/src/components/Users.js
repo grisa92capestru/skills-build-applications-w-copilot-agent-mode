@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const resolveBaseUrl = () => {
   const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
@@ -14,7 +14,7 @@ function Users() {
   const [selectedUser, setSelectedUser] = useState(null);
   const endpoint = `${resolveBaseUrl()}/api/users/`;
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       console.log('Users endpoint:', endpoint);
       const response = await fetch(endpoint);
@@ -32,11 +32,11 @@ function Users() {
       console.error('Failed to fetch users:', error);
       setUsers([]);
     }
-  };
+  }, [endpoint]);
 
   useEffect(() => {
     fetchUsers();
-  }, [endpoint]);
+  }, [fetchUsers]);
 
   const filteredUsers = users.filter((user) =>
     JSON.stringify(user).toLowerCase().includes(searchText.toLowerCase())

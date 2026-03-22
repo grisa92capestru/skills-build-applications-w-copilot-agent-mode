@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const resolveBaseUrl = () => {
   const codespaceName = process.env.REACT_APP_CODESPACE_NAME;
@@ -10,42 +10,112 @@ const resolveBaseUrl = () => {
 
 function Leaderboard() {
   const [leaderboardEntries, setLeaderboardEntries] = useState([]);
+  const [searchText, setSearchText] = useState('');
+  const [selectedEntry, setSelectedEntry] = useState(null);
   const endpoint = `${resolveBaseUrl()}/api/leaderboard/`;
 
-  useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        console.log('Leaderboard endpoint:', endpoint);
-        const response = await fetch(endpoint);
-        const data = await response.json();
-        console.log('Leaderboard fetched data:', data);
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      console.log('Leaderboard endpoint:', endpoint);
+      const response = await fetch(endpoint);
+      const data = await response.json();
+      console.log('Leaderboard fetched data:', data);
 
-        const normalizedData = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.results)
-            ? data.results
-            : [];
+      const normalizedData = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.results)
+          ? data.results
+          : [];
 
-        setLeaderboardEntries(normalizedData);
-      } catch (error) {
-        console.error('Failed to fetch leaderboard:', error);
-        setLeaderboardEntries([]);
-      }
-    };
-
-    fetchLeaderboard();
+      setLeaderboardEntries(normalizedData);
+    } catch (error) {
+      console.error('Failed to fetch leaderboard:', error);
+      setLeaderboardEntries([]);
+    }
   }, [endpoint]);
 
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
+
+  const filteredEntries = leaderboardEntries.filter((entry) =>
+    JSON.stringify(entry).toLowerCase().includes(searchText.toLowerCase())
+  );
+
   return (
-    <div className="container mt-4">
-      <h2>Leaderboard</h2>
-      <ul className="list-group">
-        {leaderboardEntries.map((entry) => (
-          <li key={entry._id || `${entry.team}-${entry.points}`} className="list-group-item">
-            <strong>{entry.team}</strong> - {entry.points} points
-          </li>
-        ))}
-      </ul>
+    <div className="card border-0 shadow-sm">
+      <div className="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h2 className="h4 mb-0">Leaderboard</h2>
+        <div className="d-flex align-items-center gap-2">
+          <a className="btn btn-link" href={endpoint} target="_blank" rel="noreferrer">API Link</a>
+          <button type="button" className="btn btn-primary btn-sm" onClick={fetchLeaderboard}>Refresh</button>
+        </div>
+      </div>
+      <div className="card-body">
+        <form className="row g-2 mb-3" onSubmit={(event) => event.preventDefault()}>
+          <div className="col-md-8">
+            <input
+              className="form-control"
+              type="text"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder="Filter leaderboard"
+            />
+          </div>
+          <div className="col-auto">
+            <button type="submit" className="btn btn-outline-secondary">Filter</button>
+          </div>
+        </form>
+
+        <div className="table-responsive">
+          <table className="table table-striped table-hover">
+            <thead className="table-light">
+              <tr>
+                <th>Team</th>
+                <th>Points</th>
+                <th>ID</th>
+                <th className="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEntries.map((entry) => (
+                <tr key={entry._id || `${entry.team}-${entry.points}`}>
+                  <td>{entry.team || '-'}</td>
+                  <td>{entry.points ?? '-'}</td>
+                  <td>{entry._id || '-'}</td>
+                  <td className="text-end">
+                    <button type="button" className="btn btn-outline-primary btn-sm" onClick={() => setSelectedEntry(entry)}>
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {selectedEntry && (
+        <>
+          <div className="modal show d-block" tabIndex="-1" role="dialog" aria-modal="true">
+            <div className="modal-dialog modal-lg modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Leaderboard Entry Details</h5>
+                  <button type="button" className="btn-close" aria-label="Close" onClick={() => setSelectedEntry(null)} />
+                </div>
+                <div className="modal-body">
+                  <pre className="json-preview mb-0">{JSON.stringify(selectedEntry, null, 2)}</pre>
+                </div>
+                <div className="modal-footer">
+                  <button type="button" className="btn btn-secondary" onClick={() => setSelectedEntry(null)}>Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop show" />
+        </>
+      )}
     </div>
   );
 }
